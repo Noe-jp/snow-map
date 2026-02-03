@@ -5,13 +5,12 @@
 <title>除雪サポートマップ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Leaflet -->
 <link
  rel="stylesheet"
  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 />
-<script
- src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
 html, body {
@@ -19,34 +18,72 @@ html, body {
   height: 100%;
 }
 
-#map {
+/* 全画面 */
+#container {
+  position: relative;
+  width: 100%;
   height: 100%;
+}
+
+/* ストリートビュー風 */
+#street {
+  width: 100%;
+  height: 100%;
+  background: black;
+}
+
+/* ミニマップ */
+#map {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 35%;
+  height: 30%;
+  border: 2px solid white;
+  z-index: 1000;
 }
 </style>
 </head>
 
 <body>
 
-<div id="map"></div>
+<div id="container">
+
+  <!-- ストリート -->
+  <div id="street"></div>
+
+  <!-- ミニマップ -->
+  <div id="map"></div>
+
+</div>
 
 <script>
-// 地図表示（新潟）
-const map = L.map('map').setView([37.9, 139.0], 15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
+// ★ここに自分のトークンを入れる
+const MAPILLARY_TOKEN = MLY|26352410274365848|01cbb80fca6043ab0bfacf24ea3bb08e;
+
+
+// 地図
+const map = L.map("map").setView([37.9, 139.0], 16);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap"
 }).addTo(map);
+
 
 // 現在地マーカー
 let marker = null;
 
+
 // GPS追跡
 navigator.geolocation.watchPosition(
+
   pos => {
 
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
 
+    // マップ更新
     if (!marker) {
       marker = L.marker([lat, lng]).addTo(map);
       map.setView([lat, lng], 17);
@@ -54,33 +91,54 @@ navigator.geolocation.watchPosition(
       marker.setLatLng([lat, lng]);
     }
 
+    // ストリート更新
+    loadStreet(lat, lng);
+
   },
 
   err => {
-    alert("GPS取得失敗：" + err.message);
+    alert("GPSエラー: " + err.message);
   },
 
   {
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 0
+    enableHighAccuracy: true
   }
+
 );
 
- // 地図クリック → ストリートビュー
-map.on("click", function(e){
 
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
+// Mapillary画像取得
+function loadStreet(lat, lng) {
 
   const url =
-    "https://www.google.com/maps?q=&layer=c&cbll=" +
-    lat + "," + lng;
+    "https://graph.mapillary.com/images" +
+    "?access_token=" + MAPILLARY_TOKEN +
+    "&fields=id,thumb_1024_url" +
+    "&closeto=" + lng + "," + lat +
+    "&limit=1";
 
-  window.open(url, "_blank");
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
 
-});
- 
+      if (data.data && data.data.length > 0) {
+
+        const img = data.data[0].thumb_1024_url;
+
+        document.getElementById("street").innerHTML =
+          `<img src="${img}" style="width:100%;height:100%;object-fit:cover;">`;
+
+      } else {
+
+        document.getElementById("street").innerHTML =
+          "<p style='color:white;text-align:center;'>画像なし</p>";
+
+      }
+
+    });
+
+}
+
 </script>
 
 </body>
