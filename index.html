@@ -66,6 +66,21 @@ navigator.geolocation.watchPosition(
     maximumAge: 0
   }
 );
+
+ // 地図クリック → ストリートビュー
+map.on("click", function(e){
+
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+
+  const url =
+    "https://www.google.com/maps?q=&layer=c&cbll=" +
+    lat + "," + lng;
+
+  window.open(url, "_blank");
+
+});
+ 
 </script>
 
 </body>
