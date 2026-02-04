@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>除雪サポートマップ</title>
+<title>除雪サポート・ストリートビュー</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -24,35 +24,77 @@ html, body {
 
 <script>
 
-  
-// 設定
+
+//設定
 const API_KEY = "AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap";
 
+// 更新条件
+const UPDATE_DISTANCE = 3;   // m（3m動いたら更新）
+const UPDATE_INTERVAL = 1000; // ms（1秒）
 
-// Google Maps 読み込み
+
+//変数
+let panorama = null;
+
+let lastLat = null;
+let lastLng = null;
+let lastTime = 0;
+
+
+
+//Google Maps 読み込み
 function loadGoogleMaps() {
+
   const script = document.createElement("script");
+
   script.src =
     "https://maps.googleapis.com/maps/api/js?key=" +
     API_KEY +
     "&callback=initMap";
+
   script.async = true;
+
   document.head.appendChild(script);
 }
 
 window.onload = loadGoogleMaps;
 
 
-// メイン処理
-let panorama = null;
 
+//距離計算（m）
+function getDistance(lat1, lng1, lat2, lng2) {
+
+  const R = 6371000;
+
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180) *
+    Math.cos(lat2*Math.PI/180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c;
+}
+
+
+
+//初期化
 function initMap() {
 
   // 仮の初期位置（新潟）
-  const start = { lat: 37.9, lng: 139.0 };
+  const start = {
+    lat: 37.9,
+    lng: 139.0
+  };
 
   panorama = new google.maps.StreetViewPanorama(
+
     document.getElementById("pano"),
+
     {
       position: start,
 
@@ -63,22 +105,22 @@ function initMap() {
 
       zoom: 1,
 
-      // UI制御
-      addressControl: true,   // ← 住所ON
+      // UI設定
+      addressControl: true,   // 住所ON
       linksControl: false,
       panControl: false,
       enableCloseButton: false,
-      showRoadLabels: false,
       fullscreenControl: false,
-      zoomControl: false
+      zoomControl: false,
+      showRoadLabels: false
     }
   );
 
   startGPS();
 }
 
-
-// GPS追跡
+  
+//GPS追跡
 function startGPS() {
 
   if (!navigator.geolocation) {
@@ -92,12 +134,40 @@ function startGPS() {
 
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      const now = Date.now();
 
-      const location = { lat, lng };
+      // 初回
+      if (lastLat === null) {
 
-      // ストリートビュー移動
-      panorama.setPosition(location);
+        lastLat = lat;
+        lastLng = lng;
+        lastTime = now;
 
+        panorama.setPosition({ lat, lng });
+
+        return;
+      }
+
+      const dist = getDistance(
+        lastLat, lastLng,
+        lat, lng
+      );
+
+      const timeDiff = now - lastTime;
+
+
+      // 3m or 1秒で更新
+      if (
+        dist >= UPDATE_DISTANCE ||
+        timeDiff >= UPDATE_INTERVAL
+      ) {
+
+        panorama.setPosition({ lat, lng });
+
+        lastLat = lat;
+        lastLng = lng;
+        lastTime = now;
+      }
     },
 
     err => {
@@ -116,4 +186,3 @@ function startGPS() {
 
 </body>
 </html>
-
