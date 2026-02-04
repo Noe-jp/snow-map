@@ -1,118 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>除雪ナビ</title>
+<title>除雪サポートマップ</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 html, body {
   margin: 0;
   height: 100%;
-  overflow: hidden;
 }
 
-#street {
+#pano {
   width: 100%;
   height: 100%;
-}
-
-#map {
-  position: fixed;
-  right: 10px;
-  bottom: 10px;
-  width: 150px;
-  height: 150px;
-  border: 2px solid white;
-  z-index: 10;
 }
 </style>
 </head>
 
 <body>
 
-<div id="street"></div>
-<div id="map"></div>
+<div id="pano"></div>
 
 <script>
 
-let panorama;
-let map;
-let marker;
+  
+// 設定
+const API_KEY = "AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap";
 
-// Google Maps 初期化
+
+// Google Maps 読み込み
+function loadGoogleMaps() {
+  const script = document.createElement("script");
+  script.src =
+    "https://maps.googleapis.com/maps/api/js?key=" +
+    API_KEY +
+    "&callback=initMap";
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+window.onload = loadGoogleMaps;
+
+
+// メイン処理
+let panorama = null;
+
 function initMap() {
 
-  navigator.geolocation.getCurrentPosition(pos => {
+  // 仮の初期位置（新潟）
+  const start = { lat: 37.9, lng: 139.0 };
 
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+  panorama = new google.maps.StreetViewPanorama(
+    document.getElementById("pano"),
+    {
+      position: start,
 
-    const loc = { lat, lng };
+      pov: {
+        heading: 0,
+        pitch: 0
+      },
 
-    // Street View
-    panorama = new google.maps.StreetViewPanorama(
-      document.getElementById("street"),
-      {
-        position: loc,
-        pov: {
-          heading: 0,
-          pitch: 0
-        },
-        zoom: 1
-      }
-    );
+      zoom: 1,
 
-    // Map
-    map = new google.maps.Map(
-      document.getElementById("map"),
-      {
-        center: loc,
-        zoom: 17,
-        disableDefaultUI: true
-      }
-    );
+      // UI制御
+      addressControl: true,   // ← 住所ON
+      linksControl: false,
+      panControl: false,
+      enableCloseButton: false,
+      showRoadLabels: false,
+      fullscreenControl: false,
+      zoomControl: false
+    }
+  );
 
-    marker = new google.maps.Marker({
-      position: loc,
-      map: map
-    });
-
-  },
-  err => {
-    alert("GPSエラー：" + err.message);
-  });
+  startGPS();
 }
 
 
 // GPS追跡
-navigator.geolocation.watchPosition(pos => {
+function startGPS() {
 
-  if(!panorama) return;
+  if (!navigator.geolocation) {
+    alert("GPSが使えません");
+    return;
+  }
 
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
+  navigator.geolocation.watchPosition(
 
-  const loc = { lat, lng };
+    pos => {
 
-  panorama.setPosition(loc);
-  marker.setPosition(loc);
-  map.setCenter(loc);
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
 
-},
-err => {
-  alert("GPSエラー：" + err.message);
-},
-{
-  enableHighAccuracy: true,
-  maximumAge: 0
-});
+      const location = { lat, lng };
+
+      // ストリートビュー移動
+      panorama.setPosition(location);
+
+    },
+
+    err => {
+      alert("GPSエラー：" + err.message);
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
 
 </script>
-
-<script
-src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap"
-async defer></script>
 
 </body>
 </html>
