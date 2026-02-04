@@ -2,109 +2,37 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>除雪ナビ</title>
+<title>Map Test</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 html, body {
   margin: 0;
   height: 100%;
-  overflow: hidden;
-}
-
-#street {
-  width: 100%;
-  height: 100%;
 }
 
 #map {
-  position: fixed;
-  right: 10px;
-  bottom: 10px;
-  width: 140px;
-  height: 140px;
-  border: 2px solid white;
-  z-index: 10;
+  width: 100%;
+  height: 100%;
 }
 </style>
 </head>
 
 <body>
 
-<div id="street"></div>
 <div id="map"></div>
 
 <script>
-
-let panorama;
-let map;
-let marker;
-
-// Google Maps 初期化
 function initMap() {
 
-  navigator.geolocation.getCurrentPosition(pos => {
+  const pos = { lat: 37.9, lng: 139.0 };
 
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-
-    const loc = { lat, lng };
-
-    // StreetView
-    panorama = new google.maps.StreetViewPanorama(
-      document.getElementById("street"),
-      {
-        position: loc,
-        pov: {
-          heading: 0,
-          pitch: 0
-        },
-        zoom: 1
-      }
-    );
-
-    // Map
-    map = new google.maps.Map(
-      document.getElementById("map"),
-      {
-        center: loc,
-        zoom: 17,
-        disableDefaultUI: true
-      }
-    );
-
-    marker = new google.maps.Marker({
-      position: loc,
-      map: map
-    });
-
+  new google.maps.Map(document.getElementById("map"), {
+    center: pos,
+    zoom: 15
   });
+
 }
-
-
-// GPS追跡
-navigator.geolocation.watchPosition(pos => {
-
-  if(!panorama) return;
-
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
-
-  const loc = { lat, lng };
-
-  panorama.setPosition(loc);
-  marker.setPosition(loc);
-  map.setCenter(loc);
-
-},
-err => {
-  alert("GPSエラー：" + err.message);
-},
-{
-  enableHighAccuracy: true,
-  maximumAge: 0
-});
-
 </script>
 
 <script
@@ -113,3 +41,4 @@ async defer></script>
 
 </body>
 </html>
+
