@@ -17,11 +17,11 @@ html, body {
   height: 100%;
 }
 
-/* 残り回数表示 */
+/* 右上表示 */
 #info {
   position: fixed;
   top: 10px;
-  left: 10px;
+  right: 10px;
   background: rgba(0,0,0,0.7);
   color: white;
   padding: 8px 10px;
@@ -37,7 +37,7 @@ html, body {
 <div id="pano"></div>
 
 <div id="info">
-  残り読み込み回数（目安）:<br>
+  残り読込（目安）:<br>
   <span id="remain">---</span> 回
 </div>
 
@@ -46,19 +46,20 @@ html, body {
 // ===== 設定 =====
 const API_KEY = "AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap";
 
-const UPDATE_DISTANCE = 3;     
-const UPDATE_INTERVAL = 1000;
+const UPDATE_DISTANCE = 8;      // 8m以上で更新
+const UPDATE_INTERVAL = 2000;  // 2秒
 
-// 料金目安
+const MAX_ACCURACY = 15;       // 精度15m以下のみOK
+
+// 無料枠計算
 const PRICE_PER = 0.000014;
 const FREE = 200;
-
-// 最大回数（無料枠分）
 const MAX_COUNT = Math.floor(FREE / PRICE_PER);
 
 
 // ===== 変数 =====
 let panorama = null;
+let svService = null;
 
 let lastLat = null;
 let lastLng = null;
@@ -67,7 +68,7 @@ let lastTime = 0;
 let viewCount = 0;
 
 
-// ===== Google Maps 読み込み =====
+// ===== Google 読み込み =====
 function loadGoogleMaps() {
 
   const script = document.createElement("script");
@@ -85,7 +86,7 @@ function loadGoogleMaps() {
 window.onload = loadGoogleMaps;
 
 
-// ===== 距離計算 =====
+// ===== 距離 =====
 function getDistance(lat1, lng1, lat2, lng2) {
 
   const R = 6371000;
@@ -103,13 +104,12 @@ function getDistance(lat1, lng1, lat2, lng2) {
 }
 
 
-// ===== 回数更新 =====
+// ===== 残り更新 =====
 function updateRemain(){
 
   viewCount++;
 
   let remain = MAX_COUNT - viewCount;
-
   if (remain < 0) remain = 0;
 
   document.getElementById("remain").textContent =
@@ -120,47 +120,50 @@ function updateRemain(){
 // ===== 初期化 =====
 function initMap() {
 
-  // 初期位置（新潟）
-  const start = {
-    lat: 37.9,
-    lng: 139.0
-  };
+  const start = { lat: 37.9, lng: 139.0 };
 
   panorama = new google.maps.StreetViewPanorama(
-
     document.getElementById("pano"),
-
     {
       position: start,
-
-      pov: {
-        heading: 0,
-        pitch: 0
-      },
-
+      pov: { heading: 0, pitch: 0 },
       zoom: 1,
 
       addressControl: true,
       linksControl: false,
       panControl: false,
-      fullscreenControl: false,
       zoomControl: false,
-      enableCloseButton: false,
-      showRoadLabels: false
+      fullscreenControl: false
     }
   );
 
-  updateRemain();
+  svService = new google.maps.StreetViewService();
 
   startGPS();
 }
 
 
-// ===== GPS追跡 =====
+// ===== 道チェック =====
+function hasStreetView(lat, lng, callback){
+
+  svService.getPanorama(
+    {
+      location: { lat, lng },
+      radius: 30
+    },
+    (data, status) => {
+
+      callback(status === "OK");
+    }
+  );
+}
+
+
+// ===== GPS =====
 function startGPS() {
 
   if (!navigator.geolocation) {
-    alert("GPSが使えません");
+    alert("GPS未対応");
     return;
   }
 
@@ -170,7 +173,11 @@ function startGPS() {
 
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy;
       const now = Date.now();
+
+      // 精度悪いなら無視
+      if (acc > MAX_ACCURACY) return;
 
       // 初回
       if (lastLat === null) {
@@ -194,9 +201,15 @@ function startGPS() {
 
 
       if (
-        dist >= UPDATE_DISTANCE ||
-        timeDiff >= UPDATE_INTERVAL
-      ) {
+        dist < UPDATE_DISTANCE &&
+        timeDiff < UPDATE_INTERVAL
+      ) return;
+
+
+      // 道あるか確認
+      hasStreetView(lat, lng, ok => {
+
+        if (!ok) return;
 
         panorama.setPosition({ lat, lng });
         updateRemain();
@@ -204,7 +217,8 @@ function startGPS() {
         lastLat = lat;
         lastLng = lng;
         lastTime = now;
-      }
+
+      });
     },
 
     err => {
@@ -223,3 +237,4 @@ function startGPS() {
 
 </body>
 </html>
+
