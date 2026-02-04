@@ -34,16 +34,14 @@ html, body {
 <div id="street"></div>
 <div id="map"></div>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw"></script>
-
 <script>
 
 let panorama;
 let map;
 let marker;
 
-// 初期化
-function init() {
+// Google Maps 初期化
+function initMap() {
 
   navigator.geolocation.getCurrentPosition(pos => {
 
@@ -84,7 +82,7 @@ function init() {
 }
 
 
-// GPS追跡（歩くと更新）
+// GPS追跡
 navigator.geolocation.watchPosition(pos => {
 
   if(!panorama) return;
@@ -107,11 +105,11 @@ err => {
   maximumAge: 0
 });
 
-
-// 起動
-init();
-
 </script>
+
+<script
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap"
+async defer></script>
 
 </body>
 </html>
