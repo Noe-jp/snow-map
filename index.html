@@ -28,9 +28,10 @@ html, body {
 //設定
 const API_KEY = "AIzaSyBgQc_elCwrKg5zCbIgRPktr-3fCefxjkw&callback=initMap";
 
+
 // 更新条件
-const UPDATE_DISTANCE = 3;   // m（3m動いたら更新）
-const UPDATE_INTERVAL = 1000; // ms（1秒）
+const UPDATE_DISTANCE = 3;
+const UPDATE_INTERVAL = 1000;
 
 
 //変数
@@ -85,7 +86,7 @@ function getDistance(lat1, lng1, lat2, lng2) {
 //初期化
 function initMap() {
 
-  // 仮の初期位置（新潟）
+  // 初期位置（新潟）
   const start = {
     lat: 37.9,
     lng: 139.0
@@ -106,7 +107,7 @@ function initMap() {
       zoom: 1,
 
       // UI設定
-      addressControl: true,   // 住所ON
+      addressControl: true,
       linksControl: false,
       panControl: false,
       enableCloseButton: false,
