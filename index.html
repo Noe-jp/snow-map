@@ -132,8 +132,11 @@ function initMap() {
       addressControl: true,
       linksControl: false,
       panControl: false,
-      zoomControl: false,
-      fullscreenControl: false
+      
+      zoomControl: true,
+      fullscreenControl: false,
+      
+      gestureHandling: "greedy",
     }
   );
 
